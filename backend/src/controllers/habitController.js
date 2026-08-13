@@ -44,7 +44,7 @@ export const getAllHabit = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getAllHabitService controller: ', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch habits.',
     });
