@@ -1,7 +1,28 @@
-import '../styles/habit-tracker.css';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+
+import HabitItem from '../components/HabitItem';
+import HabitModal from '../components/HabitModal';
 import ProgressBar from '../components/ProgressBar';
 
+import {
+  createHabit,
+  deleteHabit,
+  getAllHabits,
+  updateHabit,
+} from '../services/habitService';
+
+import '../styles/habit-tracker.css';
+
 function HabitTracker() {
+  const [habits, setHabits] = useState([]);
+  const [completedHabits, setCompletedHabits] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingHabit, setEditingHabit] = useState(null);
+  const [habitName, setHabitName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const currentDate = new Date();
 
   const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -9,6 +30,131 @@ function HabitTracker() {
     month: 'short',
     day: 'numeric',
   });
+
+  useEffect(() => {
+    fetchHabits();
+  }, []);
+
+  const fetchHabits = async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await getAllHabits();
+
+      setHabits(response.data);
+    } catch (error) {
+      console.error('Failed to fetch habits:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingHabit(null);
+    setHabitName('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (habit) => {
+    setEditingHabit(habit);
+    setHabitName(habit.habitName);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsModalOpen(false);
+    setEditingHabit(null);
+    setHabitName('');
+  };
+
+  const handleHabitNameChange = (event) => {
+    setHabitName(event.target.value);
+  };
+
+  const handleSubmitHabit = async (event) => {
+    event.preventDefault();
+
+    const trimmedHabitName = habitName.trim();
+
+    if (!trimmedHabitName) {
+      toast.error('Habit name is required.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      if (editingHabit) {
+        const response = await updateHabit(editingHabit._id, trimmedHabitName);
+
+        setHabits((currentHabits) =>
+          currentHabits.map((habit) =>
+            habit._id === editingHabit._id ? response.data : habit,
+          ),
+        );
+
+        toast.success('Habit updated successfully.');
+      } else {
+        const response = await createHabit(trimmedHabitName);
+
+        setHabits((currentHabits) => [response.data, ...currentHabits]);
+
+        toast.success('Habit created successfully.');
+      }
+
+      setIsModalOpen(false);
+      setEditingHabit(null);
+      setHabitName('');
+    } catch (error) {
+      console.error('Failed to save habit:', error);
+
+      const message = error.response?.data?.message || 'Failed to save habit.';
+
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteHabit = async (habit) => {
+    try {
+      await deleteHabit(habit._id);
+
+      setHabits((currentHabits) =>
+        currentHabits.filter((currentHabit) => currentHabit._id !== habit._id),
+      );
+
+      setCompletedHabits((currentCompletedHabits) =>
+        currentCompletedHabits.filter((id) => id !== habit._id),
+      );
+
+      toast.success('Habit deleted successfully.');
+    } catch (error) {
+      console.error('Failed to delete habit:', error);
+
+      const message =
+        error.response?.data?.message || 'Failed to delete habit.';
+
+      toast.error(message);
+    }
+  };
+
+  const handleToggleHabit = (id) => {
+    setCompletedHabits((currentCompletedHabits) => {
+      if (currentCompletedHabits.includes(id)) {
+        return currentCompletedHabits.filter((habitId) => habitId !== id);
+      }
+
+      return [...currentCompletedHabits, id];
+    });
+  };
+
+  const completedCount = completedHabits.length;
+  const totalCount = habits.length;
 
   return (
     <main className='habit-tracker-page'>
@@ -20,19 +166,52 @@ function HabitTracker() {
         </header>
 
         <section className='habit-tracker__content'>
-          <ProgressBar completedCount={0} totalCount={0} />
+          <ProgressBar
+            completedCount={completedCount}
+            totalCount={totalCount}
+          />
 
           <div className='habit-tracker__list'>
-            <p className='habit-tracker__empty-message'>
-              No habits yet. Add your first habit.
-            </p>
+            {isLoading ? (
+              <p className='habit-tracker__empty-message'>Loading habits...</p>
+            ) : habits.length === 0 ? (
+              <p className='habit-tracker__empty-message'>
+                No habits yet. Add your first habit.
+              </p>
+            ) : (
+              habits.map((habit) => (
+                <HabitItem
+                  key={habit._id}
+                  habit={habit}
+                  isCompleted={completedHabits.includes(habit._id)}
+                  onToggle={handleToggleHabit}
+                  onEdit={handleOpenEditModal}
+                  onDelete={handleDeleteHabit}
+                />
+              ))
+            )}
           </div>
         </section>
 
-        <button type='button' className='habit-tracker__add-button'>
+        <button
+          type='button'
+          className='habit-tracker__add-button'
+          onClick={handleOpenCreateModal}
+        >
           Add New Habit
         </button>
       </section>
+
+      {isModalOpen && (
+        <HabitModal
+          habitName={habitName}
+          isEditing={Boolean(editingHabit)}
+          isSubmitting={isSubmitting}
+          onChange={handleHabitNameChange}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmitHabit}
+        />
+      )}
     </main>
   );
 }
