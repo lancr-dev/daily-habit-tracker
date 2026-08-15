@@ -1,7 +1,15 @@
-import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-const App = () => {
-  return <div>App</div>;
-};
+import HabitTracker from './pages/HabitTracker';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<HabitTracker />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
 
 export default App;

@@ -1,0 +1,76 @@
+.habit-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.15);
+}
+
+.habit-item__label {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.habit-item__checkbox {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-text-primary);
+}
+
+.habit-item__name {
+  overflow: hidden;
+  font-size: clamp(0.95rem, 4vw, 1.05rem);
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.habit-item__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.habit-item__action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-primary);
+  transition:
+    background-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.habit-item__action-button:hover {
+  background-color: rgba(17, 17, 17, 0.08);
+}
+
+.habit-item__action-button:active {
+  transform: scale(0.95);
+}
+
+.habit-item__action-button--delete {
+  color: var(--color-danger);
+}
+
+.habit-item__action-button:focus-visible,
+.habit-item__checkbox:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
