@@ -9,7 +9,9 @@ import {
   createHabit,
   deleteHabit,
   getAllHabits,
+  getHabitCompletionsByDate,
   updateHabit,
+  updateHabitCompletion,
 } from '../services/habitService';
 
 import '../styles/habit-tracker.css';
@@ -31,19 +33,35 @@ function HabitTracker() {
     day: 'numeric',
   });
 
+  const dateKey = currentDate.toLocaleDateString('en-CA');
+
   useEffect(() => {
-    fetchHabits();
+    fetchHabitData();
   }, []);
 
-  const fetchHabits = async () => {
+  const fetchHabitData = async () => {
     try {
       setIsLoading(true);
 
-      const response = await getAllHabits();
+      const [habitsResponse, completionsResponse] = await Promise.all([
+        getAllHabits(),
+        getHabitCompletionsByDate(dateKey),
+      ]);
 
-      setHabits(response.data);
+      setHabits(habitsResponse.data);
+
+      const completedHabitIds = completionsResponse.data
+        .filter((completion) => completion.completed)
+        .map((completion) => completion.habit);
+
+      setCompletedHabits(completedHabitIds);
     } catch (error) {
-      console.error('Failed to fetch habits:', error);
+      console.error('Failed to fetch habit data:', error);
+
+      const message =
+        error.response?.data?.message || 'Failed to fetch habit data.';
+
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -143,14 +161,28 @@ function HabitTracker() {
     }
   };
 
-  const handleToggleHabit = (id) => {
-    setCompletedHabits((currentCompletedHabits) => {
-      if (currentCompletedHabits.includes(id)) {
-        return currentCompletedHabits.filter((habitId) => habitId !== id);
-      }
+  const handleToggleHabit = async (habitId) => {
+    const isCurrentlyCompleted = completedHabits.includes(habitId);
+    const newCompletedStatus = !isCurrentlyCompleted;
 
-      return [...currentCompletedHabits, id];
-    });
+    try {
+      await updateHabitCompletion(habitId, dateKey, newCompletedStatus);
+
+      setCompletedHabits((currentCompletedHabits) => {
+        if (newCompletedStatus) {
+          return [...currentCompletedHabits, habitId];
+        }
+
+        return currentCompletedHabits.filter((id) => id !== habitId);
+      });
+    } catch (error) {
+      console.error('Failed to update habit completion:', error);
+
+      const message =
+        error.response?.data?.message || 'Failed to update habit completion.';
+
+      toast.error(message);
+    }
   };
 
   const completedCount = completedHabits.length;

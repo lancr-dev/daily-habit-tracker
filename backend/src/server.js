@@ -4,6 +4,7 @@ import cors from 'cors';
 
 import connectMongoDB from './config/db.js';
 import habitRoutes from './routes/habitRoutes.js';
+import habitCompletionRoutes from './routes/habitCompletionRoutes.js';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ const PORT = process.env.PORT;
 app.use(express.json());
 
 app.use('/api/habit', habitRoutes);
+app.use('/api/habit-completion', habitCompletionRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).json({

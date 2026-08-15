@@ -1,4 +1,5 @@
 import Habit from '../config/models/Habit.js';
+import HabitCompletion from '../config/models/HabitCompletion.js';
 
 export const createHabitService = async ({ habitName }) => {
   const habit = await Habit.create({
@@ -40,6 +41,10 @@ export const deleteHabitService = async (id) => {
   if (!habit) {
     return null;
   }
+
+  await HabitCompletion.deleteMany({
+    habit: habit._id,
+  });
 
   await habit.deleteOne();
 

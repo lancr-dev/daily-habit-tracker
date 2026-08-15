@@ -7,6 +7,11 @@ const habitApi = axios.create({
   withCredentials: true,
 });
 
+const habitCompletionApi = axios.create({
+  baseURL: `${API_URL}/api/habit-completion`,
+  withCredentials: true,
+});
+
 export const getAllHabits = async () => {
   const response = await habitApi.get('/');
 
@@ -31,6 +36,25 @@ export const updateHabit = async (id, habitName) => {
 
 export const deleteHabit = async (id) => {
   const response = await habitApi.delete(`/${id}`);
+
+  return response.data;
+};
+
+// Get all completion records for a specific date.
+export const getHabitCompletionsByDate = async (date) => {
+  const response = await habitCompletionApi.get('/', {
+    params: { date },
+  });
+
+  return response.data;
+};
+
+// Save a habit's completion status for a specific date.
+export const updateHabitCompletion = async (habitId, date, completed) => {
+  const response = await habitCompletionApi.put(`/${habitId}`, {
+    date,
+    completed,
+  });
 
   return response.data;
 };
