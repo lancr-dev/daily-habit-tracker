@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
+import DeleteHabitModal from '../components/DeleteHabitModal';
 import HabitItem from '../components/HabitItem';
 import HabitModal from '../components/HabitModal';
 import ProgressBar from '../components/ProgressBar';
@@ -24,6 +25,9 @@ function HabitTracker() {
   const [editingHabit, setEditingHabit] = useState(null);
   const [habitName, setHabitName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [habitToDelete, setHabitToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const currentDate = new Date();
 
@@ -138,8 +142,22 @@ function HabitTracker() {
     }
   };
 
+  const handleOpenDeleteModal = (habit) => {
+    setHabitToDelete(habit);
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setHabitToDelete(null);
+  };
+
   const handleDeleteHabit = async (habit) => {
     try {
+      setIsDeleting(true);
+
       await deleteHabit(habit._id);
 
       setHabits((currentHabits) =>
@@ -150,6 +168,8 @@ function HabitTracker() {
         currentCompletedHabits.filter((id) => id !== habit._id),
       );
 
+      setHabitToDelete(null);
+
       toast.success('Habit deleted successfully.');
     } catch (error) {
       console.error('Failed to delete habit:', error);
@@ -158,6 +178,8 @@ function HabitTracker() {
         error.response?.data?.message || 'Failed to delete habit.';
 
       toast.error(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -218,7 +240,7 @@ function HabitTracker() {
                   isCompleted={completedHabits.includes(habit._id)}
                   onToggle={handleToggleHabit}
                   onEdit={handleOpenEditModal}
-                  onDelete={handleDeleteHabit}
+                  onDelete={handleOpenDeleteModal}
                 />
               ))
             )}
@@ -242,6 +264,15 @@ function HabitTracker() {
           onChange={handleHabitNameChange}
           onClose={handleCloseModal}
           onSubmit={handleSubmitHabit}
+        />
+      )}
+
+      {habitToDelete && (
+        <DeleteHabitModal
+          habit={habitToDelete}
+          isDeleting={isDeleting}
+          onCancel={handleCloseDeleteModal}
+          onConfirm={handleDeleteHabit}
         />
       )}
     </main>
