@@ -20,7 +20,7 @@ export const updateHabitCompletionService = async (
       completed,
     },
     {
-      new: true,
+      returnDocument: 'after',
       upsert: true,
       runValidators: true,
     },
